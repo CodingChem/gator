@@ -108,5 +108,9 @@ func handlerRegister(s *state, cmd command) error {
 		return err
 	}
 	fmt.Printf("User successfully created!\n\tusername: %s\n\tid: %v\n", user.UserName, user.ID)
+	s.cmds.run(s, command{
+		name: "login",
+		args: cmd.args,
+	})
 	return nil
 }
