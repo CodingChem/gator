@@ -1,11 +1,15 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
 
+	_ "github.com/lib/pq"
+
 	"github.com/codingchem/gator/internal/config"
+	"github.com/codingchem/gator/internal/database"
 )
 
 func main() {
@@ -39,8 +43,14 @@ func initState() (state, error) {
 	if err != nil {
 		return state{}, err
 	}
+	db, err := sql.Open("postgres", globalConfig.DB_CON_STRING)
+	if err != nil {
+		return state{}, err
+	}
+	dbQueries := database.New(db)
 	return state{
 		config: &globalConfig,
 		cmds:   &cmds,
+		db:     dbQueries,
 	}, nil
 }

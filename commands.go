@@ -9,6 +9,7 @@ import (
 type state struct {
 	config *config.Config
 	cmds   *commands
+	db     *database.Queries
 }
 
 type command struct {
