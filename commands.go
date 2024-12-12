@@ -69,7 +69,11 @@ func handlerLogin(s *state, cmd command) error {
 	if len(cmd.args) != 1 {
 		return fmt.Errorf("Error: %s command expects a single arg. Found: %d", cmd.name, len(cmd.args))
 	}
-	err := s.config.SetUser(cmd.args[0])
+	_, err := s.db.GetUser(context.Background(), cmd.args[0])
+	if err != nil {
+		return err
+	}
+	err = s.config.SetUser(cmd.args[0])
 	if err != nil {
 		return err
 	}
