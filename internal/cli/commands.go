@@ -1,7 +1,8 @@
-package main
+package cli
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -31,6 +32,27 @@ type handler struct {
 	description string
 }
 
+func NewState() (state, error) {
+	globalConfig, err := config.Read()
+	if err != nil {
+		return state{}, err
+	}
+	cmds, err := NewCommands()
+	if err != nil {
+		return state{}, err
+	}
+	db, err := sql.Open("postgres", globalConfig.DB_CON_STRING)
+	if err != nil {
+		return state{}, err
+	}
+	dbQueries := database.New(db)
+	return state{
+		config: &globalConfig,
+		cmds:   &cmds,
+		db:     dbQueries,
+	}, nil
+}
+
 func NewCommands() (commands, error) {
 	var c commands
 	c.commandMap = make(map[string]handler)
@@ -47,6 +69,10 @@ func NewCommands() (commands, error) {
 		return commands{}, err
 	}
 	return c, nil
+}
+
+func (s *state) Run(name string, args []string) error {
+	return s.cmds.run(s, command{name: name, args: args})
 }
 
 func (c *commands) register(name string, description string, f func(*state, command) error) error {
