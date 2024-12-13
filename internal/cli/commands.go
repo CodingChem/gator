@@ -69,6 +69,13 @@ func NewCommands() (commands, error) {
 		return commands{}, err
 	}
 	err = c.register("reset", "\tReset users table Warning: Dangerous!\n\tUsage: `gator reset`\n", handlerReset)
+	if err != nil {
+		return commands{}, err
+	}
+	err = c.register("users", "\tList registered users\n\tUsage: `gator list`\n", handlerListUsers)
+	if err != nil {
+		return commands{}, err
+	}
 	return c, nil
 }
 
@@ -148,5 +155,23 @@ func handlerReset(s *state, _ command) error {
 		return err
 	}
 	fmt.Printf("User table successfully reset!\n")
+	return nil
+}
+
+func handlerListUsers(s *state, _ command) error {
+	users, err := s.db.GetUsers(context.Background())
+	if err != nil {
+		return err
+	}
+	if len(users) < 1 {
+		fmt.Println("No users registered.")
+	}
+	for _, user := range users {
+		if user.UserName == s.config.CurrentUser {
+			fmt.Printf("* %s (current)\n", user.UserName)
+		} else {
+			fmt.Println("*", user.UserName)
+		}
+	}
 	return nil
 }
