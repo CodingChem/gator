@@ -68,6 +68,7 @@ func NewCommands() (commands, error) {
 	if err != nil {
 		return commands{}, err
 	}
+	err = c.register("reset", "\tReset users table Warning: Dangerous!\n\tUsage: `gator reset`\n", handlerReset)
 	return c, nil
 }
 
@@ -138,5 +139,14 @@ func handlerRegister(s *state, cmd command) error {
 		name: "login",
 		args: cmd.args,
 	})
+	return nil
+}
+
+func handlerReset(s *state, _ command) error {
+	err := s.db.ResetUserTable(context.Background())
+	if err != nil {
+		return err
+	}
+	fmt.Printf("User table successfully reset!\n")
 	return nil
 }

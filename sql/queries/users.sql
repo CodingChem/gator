@@ -12,3 +12,6 @@ RETURNING *;
 SELECT *
 FROM users
 WHERE user_name = $1 LIMIT 1;
+
+-- name: ResetUserTable :exec
+DELETE FROM users;
