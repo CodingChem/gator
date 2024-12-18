@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/codingchem/gator/internal/database"
@@ -131,4 +132,37 @@ func printFeed(feed *rss.RSSFeed) {
 	for _, item := range feed.Channel.Item {
 		fmt.Printf("- %s\n\tLink: %s\n", item.Title, item.Link)
 	}
+}
+
+func handlerBrowse(s *state, cmd command, user database.User) error {
+	var limit int32
+	var err error
+	switch len(cmd.args) {
+	case 0:
+		limit = 2
+	case 1:
+		num, err := strconv.ParseInt(cmd.args[0], 10, 32)
+		if err != nil {
+				return fmt.Errorf("Error %v could not be parsed to int: %w",cmd.args[0], err)
+		}
+		limit = int32(num)
+	default:
+		return fmt.Errorf("Error: unvalid number of args")
+	}
+	posts, err := s.db.GetPostByUser(context.Background(),database.GetPostByUserParams{UserID: user.ID, Limit: limit})
+	if err != nil {
+		return err
+	}
+	printPosts(posts)
+	return nil
+}
+
+func printPosts(posts []database.Post) {
+	fmt.Println("Printing posts:")
+	if len(posts) == 0 {
+		fmt.Println("No posts!")
+	}
+	for _, post := range posts {
+		fmt.Printf("Title: %s\n",post.Title )
+	} 
 }
