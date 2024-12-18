@@ -54,6 +54,14 @@ func NewCommands() (commands, error) {
 	if err != nil {
 		return commands{}, err
 	}
+	err = c.register("follow", "\tFollow a feed\n\tUsage: `gator follow $url`\n", handlerFollow)
+	if err != nil {
+		return commands{}, err
+	}
+	err = c.register("following","\tList the feeds the current user is following\n\tUsage: `gator following`", handlerFollowing)
+	if err != nil {
+		return commands{}, err
+	}
 
 	return c, nil
 }
