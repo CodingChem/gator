@@ -46,7 +46,7 @@ func NewCommands() (commands, error) {
 	if err != nil {
 		return commands{}, err
 	}
-	err = c.register("addfeed", "\tAdd a feed\n\tUsage: `gator addfeed $name $url`\n", handlerAddFeed)
+	err = c.register("addfeed", "\tAdd a feed\n\tUsage: `gator addfeed $name $url`\n", middlewareLoggedIn(handlerAddFeed))
 	if err != nil {
 		return commands{}, err
 	}
@@ -54,11 +54,11 @@ func NewCommands() (commands, error) {
 	if err != nil {
 		return commands{}, err
 	}
-	err = c.register("follow", "\tFollow a feed\n\tUsage: `gator follow $url`\n", handlerFollow)
+	err = c.register("follow", "\tFollow a feed\n\tUsage: `gator follow $url`\n", middlewareLoggedIn(handlerFollow))
 	if err != nil {
 		return commands{}, err
 	}
-	err = c.register("following","\tList the feeds the current user is following\n\tUsage: `gator following`", handlerFollowing)
+	err = c.register("following","\tList the feeds the current user is following\n\tUsage: `gator following`", middlewareLoggedIn(handlerFollowing))
 	if err != nil {
 		return commands{}, err
 	}

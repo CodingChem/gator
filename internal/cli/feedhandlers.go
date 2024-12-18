@@ -19,13 +19,9 @@ func handlerAgg(_ *state, _ command) error {
 	return nil
 }
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 2 {
 		return fmt.Errorf("Error: Addfeed requires 2 arguments!")
-	}
-	user, err := s.db.GetUser(context.Background(), s.config.CurrentUser)
-	if err != nil {
-		return err
 	}
 
 	feed, err := s.db.CreateFeed(
@@ -70,13 +66,9 @@ func handlerListFeeds(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 1 {
 		return fmt.Errorf("Error: follow takes a single argument!")
-	}
-	user, err := s.db.GetUser(context.Background(), s.config.CurrentUser)
-	if err != nil {
-		return nil
 	}
 	feed, err := s.db.GetFeedByUrl(context.Background(), cmd.args[0])
 	if err != nil {
@@ -97,13 +89,9 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error {
+func handlerFollowing(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 0 {
 		return fmt.Errorf("Error: following takes no arguments!")
-	}
-	user, err := s.db.GetUser(context.Background(), s.config.CurrentUser)
-	if err != nil {
-		return err
 	}
 	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {
