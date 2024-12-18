@@ -10,13 +10,19 @@ import (
 	"github.com/google/uuid"
 )
 
-func handlerAgg(_ *state, _ command) error {
-	feed, err := rss.FetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+func handlerAgg(s *state, cmd command) error {
+	if len(cmd.args) != 1 {
+		return fmt.Errorf("Error: agg takes a single argument!")
+	}
+	timeBetweenReqs, err := time.ParseDuration(cmd.args[0])
 	if err != nil {
 		return err
 	}
-	fmt.Println(feed)
-	return nil
+	fmt.Println("Collecting feeds every", timeBetweenReqs)
+	ticker := time.NewTicker(timeBetweenReqs)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
+	}
 }
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
@@ -118,4 +124,11 @@ func handlerUnFollow(s *state, cmd command, user database.User) error {
 		FeedID: feed.ID,
 	})
 	return err
+}
+
+func printFeed(feed *rss.RSSFeed) {
+	fmt.Printf("Feed: %s\nDescription: %s\n", feed.Channel.Title, feed.Channel.Description)
+	for _, item := range feed.Channel.Item {
+		fmt.Printf("- %s\n\tLink: %s\n", item.Title, item.Link)
+	}
 }
