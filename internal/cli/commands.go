@@ -62,6 +62,7 @@ func NewCommands() (commands, error) {
 	if err != nil {
 		return commands{}, err
 	}
+	err = c.register("unfollow", "\tUnfollow a feed\n\tUsage: `gator unfollow $url`", middlewareLoggedIn(handlerUnFollow))
 
 	return c, nil
 }
