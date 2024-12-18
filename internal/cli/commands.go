@@ -1,21 +1,8 @@
 package cli
 
 import (
-	"context"
-	"database/sql"
 	"fmt"
-	"time"
-
-	"github.com/codingchem/gator/internal/config"
-	"github.com/codingchem/gator/internal/database"
-	"github.com/google/uuid"
 )
-
-type state struct {
-	config *config.Config
-	cmds   *commands
-	db     *database.Queries
-}
 
 type command struct {
 	name string
@@ -30,27 +17,6 @@ type handler struct {
 	cmd         func(*state, command) error
 	name        string
 	description string
-}
-
-func NewState() (state, error) {
-	globalConfig, err := config.Read()
-	if err != nil {
-		return state{}, err
-	}
-	cmds, err := NewCommands()
-	if err != nil {
-		return state{}, err
-	}
-	db, err := sql.Open("postgres", globalConfig.DB_CON_STRING)
-	if err != nil {
-		return state{}, err
-	}
-	dbQueries := database.New(db)
-	return state{
-		config: &globalConfig,
-		cmds:   &cmds,
-		db:     dbQueries,
-	}, nil
 }
 
 func NewCommands() (commands, error) {
@@ -76,11 +42,29 @@ func NewCommands() (commands, error) {
 	if err != nil {
 		return commands{}, err
 	}
-	return c, nil
-}
+	err = c.register("agg", "\tFetch and print a feed\n\tUsage: `gator agg`\n", handlerAgg)
+	if err != nil {
+		return commands{}, err
+	}
+	err = c.register("addfeed", "\tAdd a feed\n\tUsage: `gator addfeed $name $url`\n", middlewareLoggedIn(handlerAddFeed))
+	if err != nil {
+		return commands{}, err
+	}
+	err = c.register("feeds", "\tList all feeds\n\tUsage: `gator feeds`\n", handlerListFeeds)
+	if err != nil {
+		return commands{}, err
+	}
+	err = c.register("follow", "\tFollow a feed\n\tUsage: `gator follow $url`\n", middlewareLoggedIn(handlerFollow))
+	if err != nil {
+		return commands{}, err
+	}
+	err = c.register("following","\tList the feeds the current user is following\n\tUsage: `gator following`", middlewareLoggedIn(handlerFollowing))
+	if err != nil {
+		return commands{}, err
+	}
+	err = c.register("unfollow", "\tUnfollow a feed\n\tUsage: `gator unfollow $url`", middlewareLoggedIn(handlerUnFollow))
 
-func (s *state) Run(name string, args []string) error {
-	return s.cmds.run(s, command{name: name, args: args})
+	return c, nil
 }
 
 func (c *commands) register(name string, description string, f func(*state, command) error) error {
@@ -99,79 +83,11 @@ func (c *commands) run(s *state, cmd command) error {
 	return handler.cmd(s, cmd)
 }
 
-func handlerLogin(s *state, cmd command) error {
-	if len(cmd.args) != 1 {
-		return fmt.Errorf("Error: %s command expects a single arg. Found: %d", cmd.name, len(cmd.args))
-	}
-	_, err := s.db.GetUser(context.Background(), cmd.args[0])
-	if err != nil {
-		return err
-	}
-	err = s.config.SetUser(cmd.args[0])
-	if err != nil {
-		return err
-	}
-	fmt.Printf("%s successfully logged in.\n", s.config.CurrentUser)
-	return nil
-}
-
 func handlerHelp(s *state, _ command) error {
 	fmt.Printf("Welcome to gator!\n\nUsage:\n")
 	for _, handler := range s.cmds.commandMap {
 		fmt.Println()
 		fmt.Printf("Command: %s\nDescription:\n%s\n", handler.name, handler.description)
-	}
-	return nil
-}
-
-func handlerRegister(s *state, cmd command) error {
-	if len(cmd.args) != 1 {
-		return fmt.Errorf("Error: Invalid number of arguments!")
-	}
-	_, err := s.db.GetUser(context.Background(), cmd.args[0])
-	if err == nil {
-		return fmt.Errorf("Error: Username unavailable")
-	}
-	user, err := s.db.CreateUser(context.Background(), database.CreateUserParams{
-		ID:        uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		UserName:  cmd.args[0],
-	})
-	if err != nil {
-		return err
-	}
-	fmt.Printf("User successfully created!\n\tusername: %s\n\tid: %v\n", user.UserName, user.ID)
-	s.cmds.run(s, command{
-		name: "login",
-		args: cmd.args,
-	})
-	return nil
-}
-
-func handlerReset(s *state, _ command) error {
-	err := s.db.ResetUserTable(context.Background())
-	if err != nil {
-		return err
-	}
-	fmt.Printf("User table successfully reset!\n")
-	return nil
-}
-
-func handlerListUsers(s *state, _ command) error {
-	users, err := s.db.GetUsers(context.Background())
-	if err != nil {
-		return err
-	}
-	if len(users) < 1 {
-		fmt.Println("No users registered.")
-	}
-	for _, user := range users {
-		if user.UserName == s.config.CurrentUser {
-			fmt.Printf("* %s (current)\n", user.UserName)
-		} else {
-			fmt.Println("*", user.UserName)
-		}
 	}
 	return nil
 }
