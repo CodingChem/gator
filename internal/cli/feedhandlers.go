@@ -34,8 +34,8 @@ func handlerAddFeed(s *state, cmd command) error {
 			ID:        uuid.New(),
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
-			Name:      cmd.args[1],
-			Url:       cmd.args[0],
+			Name:      cmd.args[0],
+			Url:       cmd.args[1],
 			UserID:    user.ID,
 		})
 	if err != nil {
